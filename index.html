@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CALCULATOR</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .calculator {
+            transition: all 0.3s ease;
+        }
+        .btn {
+            transition: transform 0.1s ease, background-color 0.2s ease;
+        }
+        .btn:active {
+            transform: scale(0.95);
+        }
+        .operation-active {
+            background-color: #f59e0b;
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center justify-center p-4">
+    <h1 class="text-3xl font-bold text-gray-800 mb-8 uppercase">CALCULATOR</h1>
+    <div class="calculator bg-gray-800 rounded-2xl shadow-2xl overflow-hidden w-full max-w-md">
+        <!-- Display Area -->
+        <div class="p-4 bg-gray-900">
+            <div id="history" class="text-gray-400 text-right text-sm h-6"></div>
+            <div id="display" class="text-white text-right text-4xl font-light mt-2 h-12 overflow-x-auto whitespace-nowrap">0</div>
+        </div>
+
+        <!-- Button Grid -->
+        <div class="grid grid-cols-4 gap-1 p-2">
+            <!-- First Row -->
+            <button onclick="clearAll()" class="btn bg-red-600 text-white hover:bg-red-700 col-span-2 h-16 text-xl uppercase">AC</button>
+            <button onclick="backspace()" class="btn bg-gray-700 text-white hover:bg-gray-600 h-16 text-xl uppercase">⌫</button>
+            <button onclick="appendOperator('/')" class="btn operation bg-yellow-500 text-white hover:bg-yellow-600 h-16 text-xl uppercase">÷</button>
+
+            <!-- Second Row -->
+            <button onclick="appendNumber('7')" class="btn bg-gray-700 text-white hover:bg-gray-600 h-16 text-xl uppercase">7</button>
+            <button onclick="appendNumber('8')" class="btn bg-gray-700 text-white hover:bg-gray-600 h-16 text-xl uppercase">8</button>
+            <button onclick="appendNumber('9')" class="btn bg-gray-700 text-white hover:bg-gray-600 h-16 text-xl uppercase">9</button>
+            <button onclick="appendOperator('*')" class="btn operation bg-yellow-500 text-white hover:bg-yellow-600 h-16 text-xl uppercase">×</button>
+
+            <!-- Third Row -->
+            <button onclick="appendNumber('4')" class="btn bg-gray-700 text-white hover:bg-gray-600 h-16 text-xl">4</button>
+            <button onclick="appendNumber('5')" class="btn bg-gray-700 text-white hover:bg-gray-600 h-16 text-xl">5</button>
+            <button onclick="appendNumber('6')" class="btn bg-gray-700 text-white hover:bg-gray-600 h-16 text-xl">6</button>
+            <button onclick="appendOperator('-')" class="btn operation bg-yellow-500 text-white hover:bg-yellow-600 h-16 text-xl">−</button>
+
+            <!-- Fourth Row -->
+            <button onclick="appendNumber('1')" class="btn bg-gray-700 text-white hover:bg-gray-600 h-16 text-xl">1</button>
+            <button onclick="appendNumber('2')" class="btn bg-gray-700 text-white hover:bg-gray-600 h-16 text-xl">2</button>
+            <button onclick="appendNumber('3')" class="btn bg-gray-700 text-white hover:bg-gray-600 h-16 text-xl">3</button>
+            <button onclick="appendOperator('+')" class="btn operation bg-yellow-500 text-white hover:bg-yellow-600 h-16 text-xl">+</button>
+
+            <!-- Fifth Row -->
+            <button onclick="appendNumber('0')" class="btn bg-gray-700 text-white hover:bg-gray-600 col-span-2 h-16 text-xl">0</button>
+            <button onclick="appendDecimal()" class="btn bg-gray-700 text-white hover:bg-gray-600 h-16 text-xl">.</button>
+            <button onclick="calculate()" class="btn bg-green-600 text-white hover:bg-green-700 h-16 text-xl">=</button>
+        </div>
+    </div>
+
+    <script>
+        let currentInput = '0';
+        let previousInput = '';
+        let operation = null;
+        let resetInput = false;
+
+        const display = document.getElementById('display');
+        const historyDisplay = document.getElementById('history');
+        const operationButtons = document.querySelectorAll('.operation');
+
+        function updateDisplay() {
+            display.textContent = currentInput;
+        }
+
+        function appendNumber(number) {
+            if (currentInput === '0' || resetInput) {
+                currentInput = number;
+                resetInput = false;
+            } else {
+                currentInput += number;
+            }
+            updateDisplay();
+        }
+
+        function appendDecimal() {
+            if (resetInput) {
+                currentInput = '0.';
+                resetInput = false;
+            } else if (!currentInput.includes('.')) {
+                currentInput += '.';
+            }
+            updateDisplay();
+        }
+
+        function backspace() {
+            if (currentInput.length === 1 || (currentInput.length === 2 && currentInput.startsWith('-'))) {
+                currentInput = '0';
+            } else {
+                currentInput = currentInput.slice(0, -1);
+            }
+            updateDisplay();
+        }
+
+        function clearAll() {
+            currentInput = '0';
+            previousInput = '';
+            operation = null;
+            updateDisplay();
+            historyDisplay.textContent = '';
+            operationButtons.forEach(button => {
+                button.classList.remove('operation-active');
+            });
+        }
+
+        function appendOperator(op) {
+            if (operation !== null) calculate();
+            
+            previousInput = currentInput;
+            operation = op;
+            resetInput = true;
+            
+            operationButtons.forEach(button => {
+                button.classList.remove('operation-active');
+            });
+            
+            // Highlight the active operation button
+            const activeBtn = Array.from(operationButtons).find(btn => {
+                return btn.textContent === 
+                    (op === '*' ? '×' : 
+                     op === '/' ? '÷' : 
+                     op === '-' ? '−' : op);
+            });
+            
+            if (activeBtn) activeBtn.classList.add('operation-active');
+            
+            historyDisplay.textContent = `${previousInput} ${op}`;
+        }
+
+        function calculate() {
+            let computation;
+            const prev = parseFloat(previousInput);
+            const current = parseFloat(currentInput);
+            
+            if (isNaN(prev) || isNaN(current)) return;
+            
+            switch (operation) {
+                case '+':
+                    computation = prev + current;
+                    break;
+                case '-':
+                    computation = prev - current;
+                    break;
+                case '*':
+                    computation = prev * current;
+                    break;
+                case '/':
+                    if (current === 0) {
+                        alert("Cannot divide by zero");
+                        return;
+                    }
+                    computation = prev / current;
+                    break;
+                default:
+                    return;
+            }
+            
+            currentInput = computation.toString();
+            operation = null;
+            resetInput = true;
+            
+            operationButtons.forEach(button => {
+                button.classList.remove('operation-active');
+            });
+            
+            historyDisplay.textContent = '';
+            updateDisplay();
+        }
+
+        // Keyboard support
+        document.addEventListener('keydown', (e) => {
+            if (/[0-9]/.test(e.key)) {
+                appendNumber(e.key);
+            } else if (e.key === '.') {
+                appendDecimal();
+            } else if (e.key === '+' || e.key === '-' || e.key === '*' || e.key === '/') {
+                appendOperator(e.key);
+            } else if (e.key === 'Enter' || e.key === '=') {
+                e.preventDefault();
+                calculate();
+            } else if (e.key === 'Escape') {
+                clearAll();
+            } else if (e.key === 'Backspace') {
+                backspace();
+            }
+        });
+    </script>
+</body>
+</html>
+
